@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Taskflow — Your Daily Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f0eb;
+    --bg-card: #ffffff;
+    --bg-hover: #faf7f4;
+    --text: #2c2420;
+    --text-muted: #8a7e76;
+    --text-light: #b5aaa2;
+    --accent: #c45d3e;
+    --accent-hover: #a94e33;
+    --accent-light: #f8ece8;
+    --accent-glow: rgba(196, 93, 62, 0.12);
+    --border: #e8e0d8;
+    --border-light: #f0ebe6;
+    --green: #4a8c6f;
+    --green-light: #eaf5f0;
+    --blue: #4a7c9b;
+    --blue-light: #e8f1f7;
+    --purple: #7b6b8a;
+    --purple-light: #f0ecf3;
+    --shadow-sm: 0 1px 3px rgba(44,36,32,0.04);
+    --shadow-md: 0 4px 16px rgba(44,36,32,0.06);
+    --shadow-lg: 0 8px 32px rgba(44,36,32,0.08);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Top Bar ── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 32px;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.5rem;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo svg { width: 26px; height: 26px; }
+
+  .topbar-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn-icon {
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.2s;
+  }
+  .btn-icon:hover { background: var(--bg-hover); color: var(--accent); border-color: var(--accent); }
+  .btn-icon svg { width: 18px; height: 18px; }
+
+  /* ── Tabs ── */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    padding: 16px 32px 0;
+    background: var(--bg);
+  }
+
+  .tab {
+    padding: 10px 22px;
+    border: none;
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: var(--radius) var(--radius) 0 0;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+  }
+  .tab:hover { color: var(--text); background: var(--bg-hover); }
+  .tab.active {
+    color: var(--accent);
+    background: var(--bg-card);
+    box-shadow: var(--shadow-sm);
+  }
+  .tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 16px;
+    right: 16px;
+    height: 2px;
+    background: var(--accent);
+    border-radius: 2px 2px 0 0;
+  }
+  .tab .badge {
+    font-size: 0.7rem;
+    background: var(--border);
+    color: var(--text-muted);
+    padding: 2px 7px;
+    border-radius: 99px;
+    font-weight: 700;
+  }
+  .tab.active .badge { background: var(--accent-light); color: var(--accent); }
+
+  .tab-icon { width: 16px; height: 16px; }
+
+  /* ── Main Content ── */
+  .main {
+    padding: 24px 32px 80px;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  .page { display: none; }
+  .page.active { display: block; animation: fadeUp 0.3s ease; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Sections ── */
+  .section {
+    margin-bottom: 28px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .section-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.15rem;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-icon {
+    width: 20px; height: 20px;
+    color: var(--accent);
+  }
+
+  .date-label {
+    font-size: 0.78rem;
+    color: var(--text-light);
+    font-weight: 500;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ── Add Task ── */
+  .add-task-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .add-task-input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    background: var(--bg-card);
+    color: var(--text);
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  .add-task-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+  .add-task-input::placeholder { color: var(--text-light); }
+
+  .btn-add {
+    padding: 10px 18px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.85rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .btn-add:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+
+  /* ── Task Items ── */
+  .task-list {
+    list-style: none;
+  }
+
+  .task-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    margin-bottom: 6px;
+    transition: all 0.2s;
+    animation: slideIn 0.25s ease;
+  }
+  .task-item:hover { border-color: var(--border); box-shadow: var(--shadow-sm); }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .task-main {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .checkbox {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    background: var(--bg-card);
+  }
+  .checkbox:hover { border-color: var(--accent); }
+  .checkbox.checked {
+    background: var(--green);
+    border-color: var(--green);
+  }
+  .checkbox.checked svg { display: block; }
+  .checkbox svg { display: none; width: 12px; height: 12px; color: #fff; }
+
+  .task-text {
+    flex: 1;
+    font-size: 0.9rem;
+    color: var(--text);
+    line-height: 1.4;
+    transition: all 0.2s;
+  }
+  .task-text.done {
+    text-decoration: line-through;
+    color: var(--text-light);
+  }
+
+  .task-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .task-item:hover .task-actions { opacity: 1; }
+
+  .task-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-light);
+    transition: all 0.15s;
+  }
+  .task-btn:hover { background: var(--bg); color: var(--text-muted); }
+  .task-btn.delete:hover { background: #fde8e8; color: #c45050; }
+  .task-btn.move:hover { background: var(--blue-light); color: var(--blue); }
+  .task-btn svg { width: 14px; height: 14px; }
+
+  /* ── Subtasks ── */
+  .subtask-list {
+    list-style: none;
+    margin-left: 30px;
+    margin-top: 6px;
+    padding-left: 14px;
+    border-left: 2px solid var(--border-light);
+  }
+
+  .subtask-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+  }
+
+  .subtask-checkbox {
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    background: var(--bg-card);
+  }
+  .subtask-checkbox:hover { border-color: var(--accent); }
+  .subtask-checkbox.checked { background: var(--green); border-color: var(--green); }
+  .subtask-checkbox.checked svg { display: block; }
+  .subtask-checkbox svg { display: none; width: 10px; height: 10px; color: #fff; }
+
+  .subtask-text {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    flex: 1;
+  }
+  .subtask-text.done { text-decoration: line-through; color: var(--text-light); }
+
+  .subtask-delete {
+    width: 22px; height: 22px;
+    border: none; background: transparent;
+    border-radius: 4px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-light); transition: all 0.15s;
+    opacity: 0;
+  }
+  .subtask-item:hover .subtask-delete { opacity: 1; }
+  .subtask-delete:hover { color: #c45050; background: #fde8e8; }
+  .subtask-delete svg { width: 12px; height: 12px; }
+
+  .add-subtask-row {
+    display: flex;
+    gap: 6px;
+    margin-left: 30px;
+    padding-left: 14px;
+    border-left: 2px solid var(--border-light);
+    margin-top: 4px;
+  }
+
+  .add-subtask-input {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+  }
+  .add-subtask-input:focus { border-color: var(--accent); }
+
+  .btn-add-sub {
+    padding: 6px 12px;
+    border: none;
+    background: var(--accent-light);
+    color: var(--accent);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.78rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-add-sub:hover { background: var(--accent); color: #fff; }
+
+  /* ── Empty State ── */
+  .empty-state {
+    text-align: center;
+    padding: 32px 16px;
+    color: var(--text-light);
+    font-size: 0.88rem;
+  }
+  .empty-state svg { width: 40px; height: 40px; margin-bottom: 10px; color: var(--border); }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(44,36,32,0.4);
+    backdrop-filter: blur(4px);
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+
+  .modal {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: 28px;
+    max-width: 480px;
+    width: 90%;
+    box-shadow: var(--shadow-lg);
+    animation: fadeUp 0.25s ease;
+  }
+
+  .modal h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.2rem;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+
+  .modal p {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 20px;
+  }
+
+  .btn-secondary {
+    padding: 9px 18px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-muted);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.85rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-secondary:hover { background: var(--bg-hover); }
+
+  .btn-primary {
+    padding: 9px 18px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.85rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-primary:hover { background: var(--accent-hover); }
+
+  .backup-textarea {
+    width: 100%;
+    height: 140px;
+    padding: 10px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    resize: vertical;
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+  }
+  .backup-textarea:focus { border-color: var(--accent); }
+
+  .file-input-wrapper {
+    margin-bottom: 12px;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    padding: 12px 20px;
+    background: var(--text);
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: all 0.3s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 640px) {
+    .topbar { padding: 12px 16px; }
+    .tabs { padding: 12px 16px 0; overflow-x: auto; }
+    .tab { padding: 8px 14px; font-size: 0.82rem; }
+    .main { padding: 16px 16px 80px; }
+  }
+
+  .moved-badge {
+    font-size: 0.68rem;
+    background: var(--blue-light);
+    color: var(--blue);
+    padding: 2px 7px;
+    border-radius: 99px;
+    font-weight: 600;
+    margin-left: 6px;
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="topbar">
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    Taskflow
+  </div>
+  <div class="topbar-actions">
+    <button class="btn-icon" onclick="openBackup()" title="Backup & Restore">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    </button>
+    <button class="btn-icon" onclick="openRestore()" title="Restore from Backup">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <button class="tab active" data-tab="personal" onclick="switchTab('personal')">
+    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    Personal
+    <span class="badge" id="badge-personal">0</span>
+  </button>
+  <button class="tab" data-tab="work" onclick="switchTab('work')">
+    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+    Work
+    <span class="badge" id="badge-work">0</span>
+  </button>
+  <button class="tab" data-tab="goals" onclick="switchTab('goals')">
+    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+    Long-term Goals
+    <span class="badge" id="badge-goals">0</span>
+  </button>
+</div>
+
+<!-- Pages -->
+<div class="main">
+
+  <!-- PERSONAL PAGE -->
+  <div class="page active" id="page-personal">
+    <!-- Daily Recurring -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">
+          <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Daily Recurring Tasks
+        </div>
+        <span class="date-label" id="today-date"></span>
+      </div>
+      <div class="add-task-row">
+        <input class="add-task-input" id="input-daily" placeholder="Add a recurring daily task…" onkeydown="if(event.key==='Enter') addTask('daily')">
+        <button class="btn-add" onclick="addTask('daily')">+ Add</button>
+      </div>
+      <ul class="task-list" id="list-daily"></ul>
+    </div>
+
+    <!-- Non-Recurring -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">
+          <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Tasks for Today
+        </div>
+      </div>
+      <div class="add-task-row">
+        <input class="add-task-input" id="input-personal" placeholder="Add a one-time task…" onkeydown="if(event.key==='Enter') addTask('personal')">
+        <button class="btn-add" onclick="addTask('personal')">+ Add</button>
+      </div>
+      <ul class="task-list" id="list-personal"></ul>
+    </div>
+  </div>
+
+  <!-- WORK PAGE -->
+  <div class="page" id="page-work">
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">
+          <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+          Work Tasks
+        </div>
+      </div>
+      <div class="add-task-row">
+        <input class="add-task-input" id="input-work" placeholder="Add a work task…" onkeydown="if(event.key==='Enter') addTask('work')">
+        <button class="btn-add" onclick="addTask('work')">+ Add</button>
+      </div>
+      <ul class="task-list" id="list-work"></ul>
+    </div>
+  </div>
+
+  <!-- GOALS PAGE -->
+  <div class="page" id="page-goals">
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">
+          <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+          Long-term Goals & Projects
+        </div>
+      </div>
+      <div class="add-task-row">
+        <input class="add-task-input" id="input-goals" placeholder="Add a long-term goal…" onkeydown="if(event.key==='Enter') addTask('goals')">
+        <button class="btn-add" onclick="addTask('goals')">+ Add</button>
+      </div>
+      <ul class="task-list" id="list-goals"></ul>
+    </div>
+  </div>
+</div>
+
+<!-- Backup Modal -->
+<div class="modal-overlay" id="modal-backup">
+  <div class="modal">
+    <h2>Backup Your Data</h2>
+    <p>Click "Download Backup" to save a .json file to your computer. Keep this file safe — you can use it to restore all your tasks anytime, even after clearing your browser data.</p>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModals()">Cancel</button>
+      <button class="btn-primary" onclick="downloadBackup()">Download Backup</button>
+    </div>
+  </div>
+</div>
+
+<!-- Restore Modal -->
+<div class="modal-overlay" id="modal-restore">
+  <div class="modal">
+    <h2>Restore from Backup</h2>
+    <p>Select a previously downloaded backup file (.json) to restore your tasks. This will replace your current data.</p>
+    <div class="file-input-wrapper">
+      <input type="file" id="restore-file" accept=".json" style="font-size:0.85rem;">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModals()">Cancel</button>
+      <button class="btn-primary" onclick="restoreBackup()">Restore</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── Data ──
+  let data = {
+    daily: [],      // { id, text, subtasks: [{id, text, done}], done (today's state) }
+    personal: [],   // { id, text, subtasks, done, date, movedFrom }
+    work: [],
+    goals: []
+  };
+
+  const today = () => new Date().toISOString().slice(0, 10);
+
+  // ── Init ──
+  function init() {
+    loadData();
+    resetDailyChecks();
+    updateDateLabel();
+    renderAll();
+  }
+
+  function updateDateLabel() {
+    const d = new Date();
+    const opts = { weekday: 'short', month: 'short', day: 'numeric' };
+    document.getElementById('today-date').textContent = d.toLocaleDateString('en-US', opts).toUpperCase();
+  }
+
+  // ── LocalStorage ──
+  function saveData() {
+    localStorage.setItem('taskflow_data', JSON.stringify(data));
+    localStorage.setItem('taskflow_lastDate', today());
+  }
+
+  function loadData() {
+    const saved = localStorage.getItem('taskflow_data');
+    if (saved) {
+      try { data = JSON.parse(saved); } catch(e) { /* keep defaults */ }
+    }
+    // Ensure arrays exist
+    if (!data.daily) data.daily = [];
+    if (!data.personal) data.personal = [];
+    if (!data.work) data.work = [];
+    if (!data.goals) data.goals = [];
+  }
+
+  // Reset daily recurring checkmarks each new day
+  function resetDailyChecks() {
+    const lastDate = localStorage.getItem('taskflow_lastDate');
+    if (lastDate !== today()) {
+      data.daily.forEach(t => {
+        t.done = false;
+        (t.subtasks || []).forEach(s => s.done = false);
+      });
+      saveData();
+    }
+  }
+
+  // ── Tab Switching ──
+  function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(`page-${tab}`).classList.add('active');
+  }
+
+  // ── Unique ID ──
+  let _id = Date.now();
+  function uid() { return 'id_' + (_id++); }
+
+  // ── Add Task ──
+  function addTask(list) {
+    const input = document.getElementById(`input-${list}`);
+    const text = input.value.trim();
+    if (!text) return;
+    const task = { id: uid(), text, subtasks: [], done: false };
+    if (list === 'personal') {
+      task.date = today();
+      task.movedFrom = null;
+    }
+    data[list].push(task);
+    input.value = '';
+    saveData();
+    renderList(list);
+    updateBadges();
+  }
+
+  // ── Toggle Task ──
+  function toggleTask(list, id) {
+    const task = data[list].find(t => t.id === id);
+    if (task) { task.done = !task.done; saveData(); renderList(list); updateBadges(); }
+  }
+
+  // ── Delete Task ──
+  function deleteTask(list, id) {
+    data[list] = data[list].filter(t => t.id !== id);
+    saveData(); renderList(list); updateBadges();
+  }
+
+  // ── Move to Next Day ──
+  function moveToNextDay(id) {
+    const task = data.personal.find(t => t.id === id);
+    if (task) {
+      const d = new Date(task.date || today());
+      d.setDate(d.getDate() + 1);
+      task.date = d.toISOString().slice(0, 10);
+      task.movedFrom = today();
+      task.done = false;
+      showToast('Task moved to ' + d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' }));
+      saveData(); renderList('personal'); updateBadges();
+    }
+  }
+
+  // ── Subtasks ──
+  function addSubtask(list, taskId) {
+    const input = document.getElementById(`sub-input-${taskId}`);
+    const text = input.value.trim();
+    if (!text) return;
+    const task = data[list].find(t => t.id === taskId);
+    if (task) {
+      task.subtasks.push({ id: uid(), text, done: false });
+      input.value = '';
+      saveData(); renderList(list);
+    }
+  }
+
+  function toggleSubtask(list, taskId, subId) {
+    const task = data[list].find(t => t.id === taskId);
+    if (task) {
+      const sub = task.subtasks.find(s => s.id === subId);
+      if (sub) { sub.done = !sub.done; saveData(); renderList(list); }
+    }
+  }
+
+  function deleteSubtask(list, taskId, subId) {
+    const task = data[list].find(t => t.id === taskId);
+    if (task) {
+      task.subtasks = task.subtasks.filter(s => s.id !== subId);
+      saveData(); renderList(list);
+    }
+  }
+
+  // ── Render ──
+  const checkSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  const deleteSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  const subSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+  const moveSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+
+  function renderTask(list, task) {
+    const isFuture = list === 'personal' && task.date && task.date > today();
+    const movedBadge = (list === 'personal' && task.date && task.date > today())
+      ? `<span class="moved-badge">Scheduled ${new Date(task.date + 'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span>` : '';
+
+    const subtasksHTML = (task.subtasks || []).map(s => `
+      <li class="subtask-item">
+        <div class="subtask-checkbox ${s.done?'checked':''}" onclick="toggleSubtask('${list}','${task.id}','${s.id}')">${checkSVG}</div>
+        <span class="subtask-text ${s.done?'done':''}">${esc(s.text)}</span>
+        <button class="subtask-delete" onclick="deleteSubtask('${list}','${task.id}','${s.id}')">${deleteSVG}</button>
+      </li>
+    `).join('');
+
+    const moveBtn = list === 'personal' ? `<button class="task-btn move" title="Move to next day" onclick="moveToNextDay('${task.id}')">${moveSVG}</button>` : '';
+
+    return `
+      <li class="task-item" style="${isFuture ? 'opacity:0.55' : ''}">
+        <div class="task-main">
+          <div class="checkbox ${task.done?'checked':''}" onclick="toggleTask('${list}','${task.id}')">${checkSVG}</div>
+          <span class="task-text ${task.done?'done':''}">${esc(task.text)}${movedBadge}</span>
+          <div class="task-actions">
+            ${moveBtn}
+            <button class="task-btn" title="Add sub-step" onclick="toggleSubInput('${task.id}')">${subSVG}</button>
+            <button class="task-btn delete" title="Delete" onclick="deleteTask('${list}','${task.id}')">${deleteSVG}</button>
+          </div>
+        </div>
+        ${subtasksHTML ? `<ul class="subtask-list">${subtasksHTML}</ul>` : ''}
+        <div class="add-subtask-row" id="sub-row-${task.id}" style="display:none">
+          <input class="add-subtask-input" id="sub-input-${task.id}" placeholder="Add a sub-step…" onkeydown="if(event.key==='Enter') addSubtask('${list}','${task.id}')">
+          <button class="btn-add-sub" onclick="addSubtask('${list}','${task.id}')">Add</button>
+        </div>
+      </li>
+    `;
+  }
+
+  function renderList(list) {
+    const el = document.getElementById(`list-${list}`);
+    const tasks = data[list] || [];
+
+    if (list === 'personal') {
+      // Show today's tasks and future (moved) tasks, sorted: today first
+      const sorted = [...tasks].sort((a,b) => {
+        const aFuture = a.date && a.date > today() ? 1 : 0;
+        const bFuture = b.date && b.date > today() ? 1 : 0;
+        return aFuture - bFuture;
+      });
+      // Filter out past tasks that are done
+      const visible = sorted.filter(t => {
+        if (t.date && t.date < today() && t.done) return false;
+        // Show past incomplete tasks as "today"
+        if (t.date && t.date < today()) t.date = today();
+        return true;
+      });
+      el.innerHTML = visible.length ? visible.map(t => renderTask(list, t)).join('') : emptyHTML('No tasks yet');
+    } else {
+      el.innerHTML = tasks.length ? tasks.map(t => renderTask(list, t)).join('') : emptyHTML(list === 'daily' ? 'Add your daily habits' : list === 'work' ? 'No work tasks yet' : 'Set some big goals');
+    }
+  }
+
+  function renderAll() {
+    ['daily','personal','work','goals'].forEach(renderList);
+    updateBadges();
+  }
+
+  function emptyHTML(msg) {
+    return `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/></svg><div>${msg}</div></div>`;
+  }
+
+  function updateBadges() {
+    const countUndone = arr => arr.filter(t => !t.done).length;
+    document.getElementById('badge-personal').textContent = countUndone(data.daily) + countUndone(data.personal.filter(t => !t.date || t.date <= today()));
+    document.getElementById('badge-work').textContent = countUndone(data.work);
+    document.getElementById('badge-goals').textContent = countUndone(data.goals);
+  }
+
+  function toggleSubInput(taskId) {
+    const row = document.getElementById(`sub-row-${taskId}`);
+    const visible = row.style.display !== 'none';
+    row.style.display = visible ? 'none' : 'flex';
+    if (!visible) document.getElementById(`sub-input-${taskId}`).focus();
+  }
+
+  function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  // ── Backup / Restore ──
+  function openBackup() { document.getElementById('modal-backup').classList.add('show'); }
+  function openRestore() { document.getElementById('modal-restore').classList.add('show'); }
+  function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('show')); }
+
+  function downloadBackup() {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `taskflow-backup-${today()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    closeModals();
+    showToast('Backup downloaded successfully');
+  }
+
+  function restoreBackup() {
+    const fileInput = document.getElementById('restore-file');
+    const file = fileInput.files[0];
+    if (!file) { showToast('Please select a backup file'); return; }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const restored = JSON.parse(e.target.result);
+        if (restored.daily || restored.personal || restored.work || restored.goals) {
+          data = restored;
+          if (!data.daily) data.daily = [];
+          if (!data.personal) data.personal = [];
+          if (!data.work) data.work = [];
+          if (!data.goals) data.goals = [];
+          saveData();
+          renderAll();
+          closeModals();
+          showToast('Data restored successfully!');
+        } else {
+          showToast('Invalid backup file format');
+        }
+      } catch(err) {
+        showToast('Error reading backup file');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  // Close modal on overlay click
+  document.querySelectorAll('.modal-overlay').forEach(m => {
+    m.addEventListener('click', (e) => { if (e.target === m) closeModals(); });
+  });
+
+  // ── Toast ──
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+  }
+
+  // ── Start ──
+  init();
+</script>
+</body>
+</html>
